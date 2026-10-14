@@ -488,7 +488,15 @@ describe('cross-version structured agent sessions', () => {
               observedAt: NOW
             }
           }),
-          dispatch: async () => ({ state: 'accepted' }),
+          dispatch: async () => ({
+            state: 'accepted',
+            providerIdentity: {
+              provider: 'codex',
+              threadId: THREAD,
+              turnId: 'turn-vault',
+              ordinal: 1
+            }
+          }),
           cancelTurn: async () => ({ cancelled: true }),
           answerPrompt: async () => undefined,
           setOption: async () => undefined

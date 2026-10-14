@@ -65,7 +65,7 @@ async function fixture() {
     await journal.appendItem(
       { provider: 'orca', clientMessageId: `output-${index}` },
       { kind: 'status', text: `Tool output ${index}` },
-      { fence: 1 }
+      { fence: 1, turnScope: { kind: 'thread' } }
     )
   }
   for (let index = 1; index < 99; index += 1) {
@@ -134,7 +134,15 @@ describe('structured session cursor/body regression', () => {
             {
               journal,
               fence: 1,
-              params: { location: { workspaceId: 'folder-workspace' }, provider: 'codex' }
+              params: {
+                location: {
+                  workspaceId: 'folder-workspace',
+                  workspaceKind: 'folder' as const,
+                  executionHostId: 'local' as const,
+                  wslDistro: null
+                },
+                provider: 'codex'
+              }
             }
           ]
         ]),
@@ -225,7 +233,7 @@ describe('structured session cursor/body regression', () => {
       await journal.appendItem(
         { provider: 'orca', clientMessageId: 'completed-turn' },
         { kind: 'turn', turnId: 'turn-1', state: 'completed' },
-        { fence: 1 }
+        { fence: 1, turnScope: { kind: 'thread' } }
       )
       subscribers.publish(SESSION, journal)
       await vi.waitFor(() => expect(owner.getSnapshot().state.cursor).toEqual(journal.cursor()))

@@ -8,10 +8,11 @@ import { CompareUnavailable } from '../sync/compare-summary'
 import { SourceControlCommitSurface } from './commit-surface'
 import { SourceControlForkPushNotice } from './fork-push-notice'
 import type { SourceControlPanelReadyProps } from './panel-props'
+import { MergetrainPanel } from '../../mergetrain/mergetrain-panel'
 
 /** The scrolling surface: status, commit affordances, the file sections and the history dock. */
 export function SourceControlPanelContent(props: SourceControlPanelReadyProps) {
-  const { activeWorktree, currentWorktreeId, model, worktreePath } = props
+  const { activeRepo, activeWorktree, currentWorktreeId, model, worktreePath } = props
   const {
     activeConnectionId,
     activeOpenRowKeys,
@@ -86,6 +87,20 @@ export function SourceControlPanelContent(props: SourceControlPanelReadyProps) {
 
   return (
     <>
+      <MergetrainPanel
+        key={JSON.stringify([
+          activeRepo.id,
+          activeWorktree.id,
+          activeWorktree.instanceId,
+          worktreePath,
+          activeWorktree.hostId,
+          activeRepo.executionHostId,
+          activeRepo.connectionId
+        ])}
+        target={model.activeRepoTarget}
+        worktreeId={currentWorktreeId}
+        branch={model.branchName}
+      />
       <SourceControlContentStatus
         unresolvedConflictCount={unresolvedConflictReviewEntries.length}
         conflictOperation={conflictOperation}

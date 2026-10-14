@@ -33,6 +33,10 @@ export const NODE_RUNTIME_INCLUDE = [
   'src/main/automations/automation-worker-durability.test.ts',
   'src/**/*.node-pty.test.ts',
   'src/**/node-pty-*.test.ts',
+  // These native PTY suites reach node-pty through a harness.
+  'src/main/shell-startup-feature-channel.test.ts',
+  'src/main/daemon/shell-ready.test.ts',
+  'src/main/daemon/repro-13767-shell-ready-marker-lost-to-exec.test.ts',
   'src/**/*.live-shell.test.ts',
   'src/**/*real-pty*.test.ts',
   'src/**/*-native.test.ts',

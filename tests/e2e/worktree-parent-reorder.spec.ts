@@ -12,6 +12,10 @@ for (const newCardStyle of [false, true]) {
         throw new Error('Missing app store')
       }
       const state = store.getState()
+      const settings = state.settings
+      if (!settings) {
+        throw new Error('Settings unavailable')
+      }
       const repo = state.repos[0]!
       const template = state.worktreesByRepo[repo.id]![0]!
       const makeRow = (name: string, rank: number) => ({
@@ -53,7 +57,7 @@ for (const newCardStyle of [false, true]) {
         groupBy: 'none',
         sortBy: 'manual',
         sidebarOpen: true,
-        settings: { ...state.settings, experimentalNewWorktreeCardStyle: newCardStyle },
+        settings: { ...settings, experimentalNewWorktreeCardStyle: newCardStyle },
         showActiveOnly: false,
         showSleepingWorkspaces: true,
         hideDefaultBranchWorkspace: false,

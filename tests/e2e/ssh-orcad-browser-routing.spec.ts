@@ -1,3 +1,4 @@
+import { getOrcadSshDeployment } from '../../src/shared/runtime-environments'
 import { cpSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import type { ElectronApplication, Page } from '@stablyai/playwright-test'
@@ -153,7 +154,7 @@ test('retained and new browser tabs keep SSH routing and login cookies after man
     expect(JSON.parse(server)).toMatchObject({ kind: 'managed' })
     const environments = await page.evaluate(() => window.api.runtimeEnvironments.list())
     const environment = environments.find(
-      (entry) => entry.orcadDeployment?.sshTargetId === remote.targetId
+      (entry) => getOrcadSshDeployment(entry)?.sshTargetId === remote.targetId
     )
     if (!environment) {
       throw new Error('Missing managed environment')
@@ -262,7 +263,7 @@ test('retained and new browser tabs keep SSH routing and login cookies after man
       path: '/echo/control',
       cookie: `${SSH_REMOTE_ONLY_COOKIE_NAME}=${SSH_REMOTE_ONLY_COOKIE_VALUE}`
     })
-    const generation = environment.orcadDeployment?.sshTargetGeneration
+    const generation = getOrcadSshDeployment(environment)?.sshTargetGeneration
     if (generation === undefined) {
       throw new Error('Missing deployment registration')
     }

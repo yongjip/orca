@@ -93,7 +93,7 @@ export function createSshDelivery(mode: 'accepted' | 'lost' | 'slow' = 'accepted
   io.getProvider = () => provider
   const input = createPtyWriteInput({})
   const id = 'ssh:connection@@pty-1'
-  ptyOwnership.set(id, 'connection')
+  ptyOwnership.set(id, 'ssh:connection')
   vi.stubGlobal('window', {
     api: {
       pty: {
@@ -124,7 +124,7 @@ export async function createPairedRuntime(ssh: ReturnType<typeof createSshDelive
   // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: This leaf-only fixture uses the existing store stub and never invokes repository mutations.
   const runtime = new OrcaRuntimeService(makeStore() as never)
   runtime.setPtyController({
-    write: (_, data) => ssh.provider.write(ssh.id, data),
+    write: (_, data) => ssh.provider.write(ssh.id, data) !== false,
     writeWithSettlement: (_, data) => ssh.provider.writeWithSettlement(ssh.id, data),
     hasPty: () => true,
     kill: () => true,

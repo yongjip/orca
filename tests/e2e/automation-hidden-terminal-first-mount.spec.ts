@@ -96,7 +96,8 @@ test.describe('Automation hidden terminal first mount', () => {
         state.queueTabStartupCommand(tab.id, {
           command: `node -e "console.log('${marker}')"`,
           telemetry: {
-            launch_source: 'automation_hidden_first_mount_e2e',
+            agent_kind: 'codex',
+            launch_source: 'orchestration',
             request_kind: 'new'
           }
         })

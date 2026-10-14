@@ -8,7 +8,7 @@
 
 import type { Page } from '@stablyai/playwright-test'
 import { expect } from '@stablyai/playwright-test'
-import type { BrowserTabSummary, ExplorerFileSummary } from './runtime-types'
+import type { BrowserTabSummary, ExplorerFileSummary, TerminalTabSummary } from './runtime-types'
 
 /** Read a value from the Zustand store. Returns the raw JS value. */
 export async function getStoreState<T>(page: Page, selector: string): Promise<T> {
@@ -49,7 +49,7 @@ export async function getActiveTabType(page: Page): Promise<string | null> {
 export async function getWorktreeTabs(
   page: Page,
   worktreeId: string
-): Promise<{ id: string; title?: string }[]> {
+): Promise<TerminalTabSummary[]> {
   return page.evaluate((worktreeId) => {
     const store = window.__store
     if (!store) {
@@ -59,7 +59,8 @@ export async function getWorktreeTabs(
     const state = store.getState()
     return (state.tabsByWorktree[worktreeId] ?? []).map((tab) => ({
       id: tab.id,
-      title: tab.customTitle || tab.title
+      title: tab.customTitle || tab.title,
+      customTitle: tab.customTitle
     }))
   }, worktreeId)
 }

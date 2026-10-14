@@ -1,3 +1,4 @@
+import { getOrcadSshDeployment } from '../../src/shared/runtime-environments'
 import { writeFileSync } from 'node:fs'
 import { expect, test } from './helpers/orca-app'
 import { waitForSessionReady } from './helpers/store'
@@ -7,7 +8,7 @@ import { runtimeAdvertisesBrowserClientHosting } from '../../src/shared/browser-
 import { ORCAD_TEMPLATE, skipUnlessManagedDockerHost } from './helpers/orcad-managed-workspace'
 
 skipUnlessManagedDockerHost()
-test.use({ orcaAppExtraEnv: { ORCA_ORCAD_TEMPLATE_PATH: ORCAD_TEMPLATE } })
+test.use({ orcaAppExtraEnv: ORCAD_TEMPLATE ? { ORCA_ORCAD_TEMPLATE_PATH: ORCAD_TEMPLATE } : {} })
 
 test('a backendless managed host does not promise client-hosted browser creation', async ({
   orcaPage: page
@@ -24,7 +25,7 @@ test('a backendless managed host does not promise client-hosted browser creation
       return target.id
     }, target.input)
     const environment = (await page.evaluate(() => window.api.runtimeEnvironments.list())).find(
-      (entry) => entry.orcadDeployment?.sshTargetId === targetId
+      (entry) => getOrcadSshDeployment(entry)?.sshTargetId === targetId
     )
     if (!environment) {
       throw new Error('Missing managed environment')

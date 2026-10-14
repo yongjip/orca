@@ -201,6 +201,13 @@ describe('agent-session create operation ledger', () => {
       },
       folderWorkspace: null
     })
+    // Linux has distinct local and remote CLI names on every test host.
+    Object.assign(runtime, {
+      resolveAgentLaunchRuntime: () => ({
+        platform: 'linux',
+        pty: { shellOverride: undefined, terminalWindowsWslDistro: null }
+      })
+    })
     const createTerminal = vi.spyOn(runtime, 'createTerminal').mockResolvedValue(terminal())
 
     await runtime.createAgentSession(

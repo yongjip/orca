@@ -2,9 +2,13 @@ import { execFileSync, spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { existsSync, readdirSync, readFileSync, readlinkSync, renameSync } from 'node:fs'
 import { setTimeout as delay } from 'node:timers/promises'
-import * as pty from 'node-pty'
+import { createRequire } from 'node:module'
+import type * as pty from 'node-pty'
 import { describe, expect, it } from 'vitest'
 import { getNodePtySpawnHelperCandidates } from '../providers/local-pty-utils'
+
+// Match the CJS resolver used by the spawn-helper fault injection.
+const nodePty: typeof pty = createRequire(import.meta.url)('node-pty')
 
 function currentRevokedFdCount(): number {
   return execFileSync('lsof', ['-p', String(process.pid)], { encoding: 'utf8' })
@@ -25,7 +29,7 @@ function getExistingSpawnHelper(): string {
 }
 
 async function spawnExitingPty(index: number): Promise<void> {
-  const proc = pty.spawn('/bin/sh', ['-c', 'exit 0'], {
+  const proc = nodePty.spawn('/bin/sh', ['-c', 'exit 0'], {
     name: 'xterm-256color',
     cols: 80,
     rows: 24,
@@ -71,7 +75,7 @@ describeOnDarwin('node-pty macOS spawn fd handling', () => {
     try {
       for (let i = 0; i < 20; i++) {
         expect(() =>
-          pty.spawn('/bin/sh', ['-c', 'exit 0'], {
+          nodePty.spawn('/bin/sh', ['-c', 'exit 0'], {
             name: 'xterm-256color',
             cols: 80,
             rows: 24,
@@ -127,7 +131,7 @@ describeOnLinux('node-pty Linux forkpty fd handling', () => {
     try {
       for (let i = 0; i < 3; i++) {
         terms.push(
-          pty.spawn('/bin/sh', ['-c', 'sleep 30'], {
+          nodePty.spawn('/bin/sh', ['-c', 'sleep 30'], {
             name: 'xterm-256color',
             cols: 80,
             rows: 24,
@@ -153,7 +157,7 @@ describeOnLinux('node-pty Linux forkpty fd handling', () => {
   }, 15000)
 
   it('does not hand an earlier pty master to a later pty child', async () => {
-    const first = pty.spawn('/bin/sh', ['-c', 'sleep 30'], {
+    const first = nodePty.spawn('/bin/sh', ['-c', 'sleep 30'], {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
@@ -163,7 +167,7 @@ describeOnLinux('node-pty Linux forkpty fd handling', () => {
     try {
       // Why the read: the child must not be able to run its listing before onData is armed, or an
       // empty capture would satisfy the negative assertion without inspecting a single fd.
-      const second = pty.spawn(
+      const second = nodePty.spawn(
         '/bin/sh',
         ['-c', `IFS= read -r _; printf '${LISTING_READY}\\n'; ls -l /proc/self/fd; exit 0`],
         {

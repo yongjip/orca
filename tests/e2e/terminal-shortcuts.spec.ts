@@ -277,6 +277,9 @@ async function pressShiftedRussianLayoutKey(page: Page): Promise<{
     // public input API exercises the same PTY data path without that browser
     // trust boundary, while the keydown assertion below still catches kitty
     // encoded sequences leaking from shifted layout keys.
+    if (!pane) {
+      throw new Error('Active terminal pane unavailable')
+    }
     pane.terminal.input('Ф')
 
     return {
@@ -622,7 +625,7 @@ test.describe('Terminal Shortcuts', () => {
                 : null
           const manager = tabId ? window.__paneManagers?.get(tabId) : null
           const pane = manager?.getActivePane?.() ?? manager?.getPanes?.()[0] ?? null
-          return Boolean(pane?.webglAddon)
+          return Boolean(pane && manager?.hasWebglRenderer(pane.id))
         },
         null,
         { timeout: 5_000 }
@@ -650,15 +653,19 @@ test.describe('Terminal Shortcuts', () => {
                   : null
             const manager = tabId ? window.__paneManagers?.get(tabId) : null
             const pane = manager?.getActivePane?.() ?? manager?.getPanes?.()[0] ?? null
-            const terminalText = pane?.terminal.buffer.active
-              .translateBufferLineToString(pane.terminal.buffer.active.cursorY, true)
+            const buffer = pane?.terminal.buffer.active
+            const terminalText = buffer
+              ?.getLine(buffer.baseY + buffer.cursorY)
+              ?.translateToString(true)
               .trim()
             const visibleText = pane?.container.textContent ?? ''
             return {
               markerVisible:
                 visibleText.includes(expectedMarker) || terminalText === expectedMarker,
-              hasComplexScriptOutput: pane?.hasComplexScriptOutput === true,
-              hasWebgl: Boolean(pane?.webglAddon)
+              hasComplexScriptOutput:
+                manager?.getRenderingDiagnostics().find((entry) => entry.paneId === pane?.id)
+                  ?.hasComplexScriptOutput === true,
+              hasWebgl: Boolean(pane && manager?.hasWebglRenderer(pane.id))
             }
           }, marker),
         {

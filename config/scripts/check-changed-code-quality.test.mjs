@@ -159,7 +159,7 @@ describe('unloaded plugin directive unused warning', () => {
   const directive = (rule) => `/* oxlint-disable ${rule} -- reason */`
 
   const withFixture = (firstLine, assert, filename = 'fixture.ts') => {
-    const directory = mkdtempSync(path.join(root, 'config', 'anti-slop-directive-test-'))
+    const directory = mkdtempSync(path.join(tmpdir(), 'anti-slop-directive-test-'))
     try {
       const file = path.join(directory, filename)
       writeFileSync(file, [firstLine, 'export const value = 1', ''].join('\n'))

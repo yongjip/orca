@@ -1,3 +1,4 @@
+import { getOrcadSshDeployment } from '../../../src/shared/runtime-environments'
 /**
  * The connect that converts a relay-era SSH host, and the source's retention then retirement,
  * shared by the runtime relay-era cell and the upgraded-profile cell.
@@ -154,7 +155,7 @@ export async function convertAndRetain(
     .toBe('managed')
   const environments = await page.evaluate(() => window.api.runtimeEnvironments.list())
   const environment = environments.find(
-    (entry) => entry.orcadDeployment?.sshTargetId === host.targetId
+    (entry) => getOrcadSshDeployment(entry)?.sshTargetId === host.targetId
   )
   expect(environment, 'a managed server registered for the host').toBeTruthy()
   expect(await serverCall(page, environment!.id, 'repo.list')).toContain(jsonText(host.repoPath))

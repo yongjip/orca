@@ -374,6 +374,7 @@ import {
   ManagedServerSelector,
   ManagedServerUpdate
 } from './managed-server-params'
+import { MergetrainEnqueueParams, MergetrainValidateParams } from './mergetrain-params'
 import { NativeChatSession, NativeChatUnsubscribe } from './native-chat-params'
 import {
   NotificationGetMissedSinceParams,
@@ -1056,6 +1057,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'managedServer.update': ManagedServerUpdate,
   'markdown.readTab': ActivateTab,
   'markdown.saveTab': SaveMarkdownTab,
+  'mergetrain.enqueue': MergetrainEnqueueParams,
+  'mergetrain.status': WorktreeSelectorOfGitParams,
+  'mergetrain.validate': MergetrainValidateParams,
   'mobileRelay.hosts.list': null,
   'mobileRelay.hosts.worktrees': MobileRelayHostWorktreesParamsSchema,
   'mobileWeb.bundle.chunk': MobileWebBundleChunkParamsSchema,

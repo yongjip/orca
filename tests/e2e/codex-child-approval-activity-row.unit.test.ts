@@ -151,7 +151,13 @@ async function openHost() {
   const feed = new StructuredAgentSessionStatusFeed({
     logger: createStructuredAgentSessionLogger(),
     sessions: new Map([
-      [SESSION, indexedStatusFeedSession({ journal, child: { phase: 'ready' } })]
+      [
+        SESSION,
+        indexedStatusFeedSession({
+          journal,
+          child: { phase: 'ready', generation: 'child-1', fence: 1 }
+        })
+      ]
     ]),
     getRecord: () => null,
     now: () => 1
@@ -201,7 +207,7 @@ async function openHost() {
         resolvedAt: tick()
       }
     }
-    await journal.appendItem(identity, resolved, { fence: 1 })
+    await journal.appendItem(identity, resolved, { fence: 1, turnScope: { kind: 'thread' } })
     publish()
     translator.resolvePrompt(itemId)
   }
@@ -234,7 +240,7 @@ describe("a Codex subagent's answered approval on the settled parent's Activity 
     await host.journal.appendItem(
       { provider: 'orca', clientMessageId: 'prompt-1' },
       { kind: 'message', role: 'user', blocks: [{ type: 'text', text: 'fan out' }] },
-      { fence: 1 }
+      { fence: 1, turnScope: { kind: 'thread' } }
     )
     host.on(CODEX_THREAD, 'turn/started', { turn: { id: 'parent-turn' } })
     const spawn = {

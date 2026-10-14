@@ -263,7 +263,12 @@ describe('account restart through renderer connection and host spawn', () => {
     registerWithFakes(mainWindow, host.runtime, host.store)
     rendererState = createInitialStoreState(() => rendererState)
     rendererState.tabsByWorktree[worktreeId][0].ptyId = 'pty-old'
-    rendererState.ptyIdsByTabId[tabId] = ['pty-old']
+    const ptyIdsByTabId = rendererState.ptyIdsByTabId
+    const layout = rendererState.terminalLayoutsByTabId?.[tabId]
+    if (!ptyIdsByTabId || !layout?.ptyIdsByLeafId) {
+      throw new Error('Restart fixture has no pane bindings')
+    }
+    ptyIdsByTabId[tabId] = ['pty-old']
     rendererState.sleepingAgentSessionsByPaneKey[paneKey] = {
       paneKey,
       tabId,
@@ -275,7 +280,7 @@ describe('account restart through renderer connection and host spawn', () => {
       capturedAt: 1,
       updatedAt: 1
     }
-    rendererState.terminalLayoutsByTabId[tabId].ptyIdsByLeafId[leafId] = 'pty-old'
+    layout.ptyIdsByLeafId[leafId] = 'pty-old'
     await installTerminalTestGlobals()
     installIpcPtyWindow(window, {})
     window.api.pty.claimViewport = vi.fn()
@@ -309,7 +314,7 @@ describe('account restart through renderer connection and host spawn', () => {
       paneTransportsRef: { current: transports },
       clearTabPtyId: vi.fn(() => {
         rendererState.tabsByWorktree[worktreeId][0].ptyId = null
-        rendererState.ptyIdsByTabId[tabId] = []
+        ptyIdsByTabId[tabId] = []
       })
     })
     const controller = {

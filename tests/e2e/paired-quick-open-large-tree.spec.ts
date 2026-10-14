@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { Page } from '@stablyai/playwright-test'
 import { expect, test } from './helpers/orca-app'
 import { launchHeadlessPairedRuntimeHost } from './helpers/headless-paired-runtime-host'
@@ -61,39 +62,48 @@ async function expectQuickOpenAndRuntimeHealthy(
   const input = dialog.getByPlaceholder('Go to file...')
   const loading = dialog.getByText('Loading files...')
   await client.page.clock.install()
-  const queryOracle = async (targetPath: string) =>
-    client.page.evaluate(
+  const queryOracle = async (targetPath: string) => {
+    const response = await client.page.evaluate(
       async ({ environmentId, worktreeId, targetPath }) => {
         const query = targetPath.split('/').at(-1)!
-        const response = await window.api.runtimeEnvironments.call({
+        return window.api.runtimeEnvironments.call({
           selector: environmentId,
           method: 'files.searchPaths',
           params: { worktree: `id:${worktreeId}`, query, limit: 32, mode: 'quick-open' }
         })
-        if (!response.ok) {
-          throw new Error(`files.searchPaths oracle failed: ${JSON.stringify(response)}`)
-        }
-        const oracle = {
-          files: response.result.files.map((file) => file.relativePath),
-          totalCount: response.result.totalCount,
-          truncated: response.result.truncated
-        }
-        const encodedOracle = new TextEncoder().encode(JSON.stringify(oracle))
-        const digest = await crypto.subtle.digest('SHA-256', encodedOracle)
-        return {
-          ...oracle,
-          oracleByteLength: encodedOracle.byteLength,
-          wireByteLength: new TextEncoder().encode(JSON.stringify(response.result)).byteLength,
-          sha256: Array.from(new Uint8Array(digest), (byte) =>
-            byte.toString(16).padStart(2, '0')
-          ).join('')
-        }
       },
       { environmentId: client.environmentId, worktreeId, targetPath }
     )
+    if (!response.ok) {
+      throw new Error(`files.searchPaths oracle failed: ${JSON.stringify(response)}`)
+    }
+    const result = z
+      .object({
+        files: z.array(z.object({ relativePath: z.string() })),
+        totalCount: z.number(),
+        truncated: z.boolean()
+      })
+      .parse(response.result)
+    const oracle = {
+      files: result.files.map((file) => file.relativePath),
+      totalCount: result.totalCount,
+      truncated: result.truncated
+    }
+    const encodedOracle = new TextEncoder().encode(JSON.stringify(oracle))
+    const digest = await crypto.subtle.digest('SHA-256', encodedOracle)
+    return {
+      ...oracle,
+      oracleByteLength: encodedOracle.byteLength,
+      wireByteLength: new TextEncoder().encode(JSON.stringify(response.result)).byteLength,
+      sha256: Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join(
+        ''
+      )
+    }
+  }
+
   for (const targetPath of [fixture.gitIgnoredTargetPath, fixture.orcaIgnoredTargetPath]) {
     const filename = targetPath.split('/').at(-1)!
-    const stat = await client.page.evaluate(
+    const rawStat = await client.page.evaluate(
       async ({ environmentId, worktreeId, targetPath }) => {
         const response = await window.api.runtimeEnvironments.call({
           selector: environmentId,
@@ -107,6 +117,7 @@ async function expectQuickOpenAndRuntimeHealthy(
       },
       { environmentId: client.environmentId, worktreeId, targetPath }
     )
+    const stat = z.object({ isDirectory: z.boolean(), size: z.number() }).parse(rawStat)
     expect(stat.isDirectory).toBe(false)
     expect(stat.size).toBeGreaterThanOrEqual(0)
 
@@ -160,7 +171,10 @@ async function expectQuickOpenAndRuntimeHealthy(
   )
   expect(response.ok).toBe(true)
   if (response.ok) {
-    expect(response.result.worktrees.some((worktree) => worktree.id === worktreeId)).toBe(true)
+    const result = z
+      .object({ worktrees: z.array(z.object({ id: z.string() })) })
+      .parse(response.result)
+    expect(result.worktrees.some((worktree) => worktree.id === worktreeId)).toBe(true)
   }
 }
 

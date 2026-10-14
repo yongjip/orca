@@ -1,3 +1,4 @@
+import { getOrcadSshDeployment } from '../../src/shared/runtime-environments'
 /**
  * A relay-era SSH host converts to managed orcad on connect (#24979), on a real host:
  *
@@ -133,7 +134,7 @@ test('a relay-era profile converts its SSH host on the first connect after upgra
     await convertAndRetain(upgraded.page, session.userDataDir, seeded)
     const environment = (
       await upgraded.page.evaluate(() => window.api.runtimeEnvironments.list())
-    ).find((entry) => entry.orcadDeployment?.sshTargetId === seeded.targetId)
+    ).find((entry) => getOrcadSshDeployment(entry)?.sshTargetId === seeded.targetId)
     if (!environment) {
       throw new Error('Converted host is missing from the environment catalog')
     }
@@ -220,7 +221,7 @@ test('a host whose sshd refuses TCP forwarding runs a managed server over the st
   expect(target?.orcadFence).toBeTruthy()
   expect(target).not.toHaveProperty('managedServerUnavailable')
   const environment = (await page.evaluate(() => window.api.runtimeEnvironments.list())).find(
-    (entry) => entry.orcadDeployment?.sshTargetId === targetId
+    (entry) => getOrcadSshDeployment(entry)?.sshTargetId === targetId
   )
   expect(environment, 'a managed server registered for the host').toBeTruthy()
   // sshd refuses every forward, so this call can only have ridden a stdio bridge.
@@ -257,7 +258,7 @@ test('a host whose port 6768 another runtime holds still runs a managed server',
     .poll(() => managedServer(page, targetId), { timeout: 8 * 60_000 })
     .toMatchObject({ kind: 'managed' })
   const environment = (await page.evaluate(() => window.api.runtimeEnvironments.list())).find(
-    (entry) => entry.orcadDeployment?.sshTargetId === targetId
+    (entry) => getOrcadSshDeployment(entry)?.sshTargetId === targetId
   )
   expect(environment, 'a managed server registered for the host').toBeTruthy()
   // The other listener drops every connection, so this call can only have reached orcad.
@@ -419,7 +420,7 @@ test('reconnect restores the managed host name after its conversion catalog fail
       state.healCatalogFault?.()
     })
     const environment = (await page.evaluate(() => window.api.runtimeEnvironments.list())).find(
-      (entry) => entry.orcadDeployment?.sshTargetId === seeded.targetId
+      (entry) => getOrcadSshDeployment(entry)?.sshTargetId === seeded.targetId
     )
     if (!environment) {
       throw new Error('Managed host missing from main catalog')

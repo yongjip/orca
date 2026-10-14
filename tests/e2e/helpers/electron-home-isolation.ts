@@ -31,7 +31,7 @@ type ElectronHomeIsolationOptions = {
 }
 
 export type ElectronHomeIsolation = {
-  env: NodeJS.ProcessEnv
+  env: Record<string, string>
   isolatedHome: string
   realHome: string
 }
@@ -94,17 +94,19 @@ export function createElectronHomeIsolation({
   return {
     isolatedHome,
     realHome,
-    env: {
-      ...stripAmbientHomeAndCodexEnv(inheritedEnv),
-      ...launchEnv,
-      ...extraEnv,
-      HOME: isolatedHome,
-      USERPROFILE: isolatedHome,
-      ORCA_E2E_USER_DATA_DIR: userDataDir,
-      ORCA_E2E_HOME_DIR: isolatedHome,
-      // macOS login resets HOME to the native account before the shell starts.
-      ...(process.platform === 'darwin' ? { ORCA_DISABLE_MACOS_LOGIN_SHELL: '1' } : {})
-    }
+    env: Object.fromEntries(
+      Object.entries({
+        ...stripAmbientHomeAndCodexEnv(inheritedEnv),
+        ...launchEnv,
+        ...extraEnv,
+        HOME: isolatedHome,
+        USERPROFILE: isolatedHome,
+        ORCA_E2E_USER_DATA_DIR: userDataDir,
+        ORCA_E2E_HOME_DIR: isolatedHome,
+        // macOS login resets HOME to the native account before the shell starts.
+        ...(process.platform === 'darwin' ? { ORCA_DISABLE_MACOS_LOGIN_SHELL: '1' } : {})
+      }).flatMap(([key, value]) => (value === undefined ? [] : [[key, value]]))
+    )
   }
 }
 

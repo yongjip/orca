@@ -132,9 +132,13 @@ describe('remote terminal tab retirement publication', () => {
     const flushOrThrow = vi.fn()
     const runtime = new OrcaRuntimeService(
       // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: This retirement fixture implements the Store session and durability operations used by the runtime.
-      withDurableRuntimeStore({
+      withDurableRuntimeStore<{
+        getWorkspaceSession: () => WorkspaceSessionState
+        setWorkspaceSession: (next: WorkspaceSessionState) => void
+        flushOrThrow: typeof flushOrThrow
+      }>({
         getWorkspaceSession: () => session,
-        setWorkspaceSession: (next) => {
+        setWorkspaceSession: (next: WorkspaceSessionState) => {
           session = next
         },
         flushOrThrow

@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { CompactAgentRow } from '../../../src/renderer/src/components/sidebar/worktree-card-compact-agent-row'
 import { buildWorktreeAgentRows } from '../../../src/renderer/src/components/sidebar/worktree-agent-rows'
 import { selectLiveAgentStatusEntriesForWorktree } from '../../../src/renderer/src/components/sidebar/worktree-agent-row-selectors'
-import type { WorktreeAgentRowsState } from '../../../src/renderer/src/components/sidebar/worktree-agent-row-selectors'
+type WorktreeAgentRowsState = Parameters<typeof selectLiveAgentStatusEntriesForWorktree>[0]
 import { makePaneKey } from '../../../src/shared/stable-pane-id'
 import { toWebTerminalSurfaceTabId } from '../../../src/shared/terminal-surface-id'
 import { TooltipProvider } from '../../../src/renderer/src/components/ui/tooltip'

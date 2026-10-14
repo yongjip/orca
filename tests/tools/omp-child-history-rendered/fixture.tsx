@@ -122,6 +122,8 @@ function App() {
             buildResumeStartup={(session) => ({ command: session.resumeCommand })}
             getOriginalPaneTarget={() => null}
             getSessionLiveState={() => null}
+            isStructuredSessionOpen={() => false}
+            onResumeInNewCli={() => setResult('Resume in new CLI requested')}
             getWorktreeInfo={() => null}
             getSessionResumeState={() => ({
               blocked: false,

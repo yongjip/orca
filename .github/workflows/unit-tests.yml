@@ -150,6 +150,18 @@ jobs:
           npx --yes pnpm@10.34.6 --filter '@orca-cloud/relay...' install --frozen-lockfile --ignore-scripts
           npx --yes pnpm@10.34.6 --filter '@orca-cloud/relay^...' build
 
+      # Desktop delivery tests import the phone sender's real transport types.
+      - name: Install mobile test type dependencies
+        if: ${{ !cancelled() && steps.relay_dependencies.outcome == 'success' }}
+        working-directory: mobile
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Typecheck desktop test sources
+        if: ${{ !cancelled() && steps.relay_dependencies.outcome == 'success' }}
+        env:
+          ORCA_BACKGROUND_LAUNCH: '1'
+        run: pnpm typecheck:e2e
+
       - name: Test relay integration contracts
         if: ${{ !cancelled() && steps.relay_dependencies.outcome == 'success' }}
         env:

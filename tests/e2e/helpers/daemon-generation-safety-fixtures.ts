@@ -90,7 +90,6 @@ export async function launchDaemonGeneration(options: {
     {
       cwd: runtime.userDataDir,
       execPath: runtime.electronPath,
-      windowsHide: true,
       env: {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',

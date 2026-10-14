@@ -49,10 +49,12 @@ export function createModelLink(writeInput: (text: string) => Promise<unknown>) 
   let live: Connection | null = null
   const zombies: Connection[] = []
   let counter = 0
-  const initialMode: ModelLinkMode = 'pass'
+  const modes: { toHost: ModelLinkMode; toClient: ModelLinkMode } = {
+    toHost: 'pass',
+    toClient: 'pass'
+  }
   const link = {
-    toHost: initialMode,
-    toClient: initialMode,
+    ...modes,
     /** Drops individual acks on an otherwise healthy connection. */
     ackLoss: 0,
     unreachable: false,

@@ -1,3 +1,4 @@
+import { folderWorkspaceKey } from '../../src/shared/workspace-scope'
 import { mkdirSync } from 'node:fs'
 import { runProcess } from '@orca/process-host'
 import type { Page } from '@stablyai/playwright-test'
@@ -314,7 +315,7 @@ test.describe('Reveal active workspace button', () => {
       store.setState({
         activeRepoId: null,
         activeWorktreeId: null,
-        activeWorkspaceKey: folderWorktreeId,
+        activeWorkspaceKey: folderWorkspaceKey(targetFolder.id),
         projectGroups: [
           {
             id: 'reveal-folder-group',

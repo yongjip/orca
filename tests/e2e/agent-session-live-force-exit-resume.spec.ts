@@ -289,7 +289,7 @@ for (const agent of ['codex', 'cursor'] as const) {
           transcriptPath,
           agent,
           providerSessionKey
-        }
+        } as const
       )
 
       // Exercise quit capture: origin:'quit' changes the live record, triggering the

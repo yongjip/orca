@@ -10,6 +10,9 @@ const describePosix = process.platform === 'win32' ? describe.skip : describe
 const hasZsh = process.platform !== 'win32' && spawnSync('/bin/zsh', ['--version']).status === 0
 const hasBash = process.platform !== 'win32' && spawnSync('/bin/bash', ['--version']).status === 0
 const COMMAND_OUTPUT = 'ORCA_STARTUP_COMMAND_RAN'
+// Pin the prompt across SQLite versions and colour schemes.
+const SQLITE_PROMPT = 'ORCA_SQLITE_FIXTURE> '
+const SQLITE_PROMPT_ARGS = `-cmd '.prompt "${SQLITE_PROMPT}"'`
 // A second Bash install with its own canonical path -- the shape a login profile
 // switches to (`exec /opt/homebrew/bin/bash`) and the one #18768 stalled on. A
 // symlink cannot stand in: both sides are realpath'd before they are compared.
@@ -372,9 +375,12 @@ zle -N zle-line-init
   sqliteTest(
     'does not treat an exec-replaced readline program as the shell prompt',
     async () => {
-      const running = await startFixture(zshFixture, 'exec /usr/bin/sqlite3\n')
+      const running = await startFixture(
+        zshFixture,
+        `exec /usr/bin/sqlite3 ${SQLITE_PROMPT_ARGS}\n`
+      )
       try {
-        await waitForOutput(running.subscribe, () => running.output().includes('sqlite> '))
+        await waitForOutput(running.subscribe, () => running.output().includes(SQLITE_PROMPT))
         await new Promise((resolve) => setTimeout(resolve, 300))
         expect(running.session.shellState).toBe('pending')
         expect(running.output()).not.toContain(COMMAND_OUTPUT)
@@ -390,10 +396,10 @@ zle -N zle-line-init
     async () => {
       const running = await startFixture(
         zshFixture,
-        'ln -s /usr/bin/sqlite3 "$HOME/zsh" && exec "$HOME/zsh"\n'
+        `ln -s /usr/bin/sqlite3 "$HOME/zsh" && exec "$HOME/zsh" ${SQLITE_PROMPT_ARGS}\n`
       )
       try {
-        await waitForOutput(running.subscribe, () => running.output().includes('sqlite> '))
+        await waitForOutput(running.subscribe, () => running.output().includes(SQLITE_PROMPT))
         await new Promise((resolve) => setTimeout(resolve, 300))
         expect(running.session.shellState).toBe('pending')
         expect(running.output()).not.toContain(COMMAND_OUTPUT)

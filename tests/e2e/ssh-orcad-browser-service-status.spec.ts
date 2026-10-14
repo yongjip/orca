@@ -1,3 +1,4 @@
+import { getOrcadSshDeployment } from '../../src/shared/runtime-environments'
 import { cpSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import type { ElectronApplication } from '@stablyai/playwright-test'
@@ -64,7 +65,7 @@ test('an unavailable browser on a responding managed host does not report a serv
     expect(JSON.parse(server)).toMatchObject({ kind: 'managed' })
     const environments = await page.evaluate(() => window.api.runtimeEnvironments.list())
     const environment = environments.find(
-      (entry) => entry.orcadDeployment?.sshTargetId === remote.targetId
+      (entry) => getOrcadSshDeployment(entry)?.sshTargetId === remote.targetId
     )
     if (!environment) {
       throw new Error('Missing managed environment')

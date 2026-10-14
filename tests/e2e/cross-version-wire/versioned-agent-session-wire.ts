@@ -95,7 +95,10 @@ async function loadClientProjection(
     typeof client.reduceStructuredAgentSession !== 'function' ||
     typeof client.projectStructuredItemsToNativeChat !== 'function' ||
     !client.EMPTY_STRUCTURED_AGENT_SESSION ||
-    typeof client.AgentJournalRenderItemSchema?.parse !== 'function'
+    !client.AgentJournalRenderItemSchema ||
+    typeof client.AgentJournalRenderItemSchema !== 'object' ||
+    !('parse' in client.AgentJournalRenderItemSchema) ||
+    typeof client.AgentJournalRenderItemSchema.parse !== 'function'
   ) {
     throw new Error('Release does not export the structured transcript reader')
   }
