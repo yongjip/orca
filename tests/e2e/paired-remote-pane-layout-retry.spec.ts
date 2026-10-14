@@ -77,8 +77,9 @@ async function readHostLayout(
     })
   ).result
   return (
-    snapshot.tabs.find((tab) => tab.type === 'terminal' && tab.parentTabId === hostTabId)
-      ?.parentLayout ?? null
+    snapshot.tabs
+      .filter((tab) => tab.type === 'terminal')
+      .find((tab) => tab.parentTabId === hostTabId)?.parentLayout ?? null
   )
 }
 
@@ -117,7 +118,12 @@ test('retries an identical remote pane layout after reconnect', async ({
 
   try {
     await host.client.call('repo.add', { path: testRepoPath, kind: 'git' })
-    client = await launchPairedElectronClient(host.offer, testInfo, 'Pane layout retry client')
+    const activeClient = await launchPairedElectronClient(
+      host.offer,
+      testInfo,
+      'Pane layout retry client'
+    )
+    client = activeClient
     await expect
       .poll(
         () =>
@@ -125,7 +131,7 @@ test('retries an identical remote pane layout after reconnect', async ({
         { timeout: 60_000, message: 'paired client never saw a host worktree' }
       )
       .toBeGreaterThan(0)
-    const worktreeId = await client.page.evaluate(
+    const worktreeId = await activeClient.page.evaluate(
       () => window.__store?.getState().allWorktrees()[0]?.id ?? null
     )
     if (!worktreeId) {
@@ -134,7 +140,7 @@ test('retries an identical remote pane layout after reconnect', async ({
 
     const created = await callEnvironment<{
       tab: { parentTabId: string; terminal: string | null }
-    }>(client.page, client.environmentId, 'session.tabs.createTerminal', {
+    }>(activeClient.page, activeClient.environmentId, 'session.tabs.createTerminal', {
       worktree: `id:${worktreeId}`,
       activate: false,
       select: false,
@@ -146,25 +152,25 @@ test('retries an identical remote pane layout after reconnect', async ({
     }
     const hostTabId = created.tab.parentTabId
     const webTabId = toWebTerminalSurfaceTabId(hostTabId)
-    await openClientTab(client.page, worktreeId, webTabId)
+    await openClientTab(activeClient.page, worktreeId, webTabId)
 
-    const terminalRoot = client.page.locator(`[data-terminal-tab-id="${webTabId}"]`).first()
+    const terminalRoot = activeClient.page.locator(`[data-terminal-tab-id="${webTabId}"]`).first()
     await terminalRoot.evaluate((element) => {
       element.setAttribute('data-layout-retry-owner', 'original')
     })
-    await client.page.evaluate(async (selector) => {
+    await activeClient.page.evaluate(async (selector) => {
       await window.api.runtimeEnvironments.disconnect({ selector })
-    }, client.environmentId)
+    }, activeClient.environmentId)
 
-    const failedPush = client.page.waitForEvent('console', {
+    const failedPush = activeClient.page.waitForEvent('console', {
       predicate: (message) =>
         message.type() === 'warning' &&
         message.text().includes('[web-runtime-session] failed to update pane layout:'),
       timeout: 30_000
     })
-    await setPaneTitle(client.page, title)
+    await setPaneTitle(activeClient.page, title)
     await failedPush
-    const failedLayout = await readClientLayout(client.page, webTabId)
+    const failedLayout = await readClientLayout(activeClient.page, webTabId)
     expect(Object.values(failedLayout?.titlesByLeafId ?? {})).toContain(title)
     expect(
       Object.values((await readHostLayout(host, worktreeId, hostTabId))?.titlesByLeafId ?? {})
@@ -173,17 +179,17 @@ test('retries an identical remote pane layout after reconnect', async ({
     await expect
       .poll(
         () =>
-          client.page.evaluate(async (selector) => {
+          activeClient.page.evaluate(async (selector) => {
             const response = await window.api.runtimeEnvironments.connect({ selector })
             return response.ok
-          }, client.environmentId),
+          }, activeClient.environmentId),
         { timeout: 60_000, message: 'paired client never reconnected to the host runtime' }
       )
       .toBe(true)
     await expect(terminalRoot).toHaveAttribute('data-layout-retry-owner', 'original')
 
-    await setPaneTitle(client.page, title)
-    expect(await readClientLayout(client.page, webTabId)).toEqual(failedLayout)
+    await setPaneTitle(activeClient.page, title)
+    expect(await readClientLayout(activeClient.page, webTabId)).toEqual(failedLayout)
     await expect
       .poll(
         async () =>

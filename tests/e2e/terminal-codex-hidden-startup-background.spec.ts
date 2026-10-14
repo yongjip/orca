@@ -1,3 +1,4 @@
+import type { TerminalWithRenderMetrics } from './helpers/terminal-render-metrics'
 import { Buffer } from 'node:buffer'
 import { PNG } from 'pngjs'
 import type { Page } from '@stablyai/playwright-test'
@@ -138,7 +139,9 @@ async function readCodexStartupBackgroundTarget(
         throw new Error('Active Codex terminal pane is unavailable')
       }
       const screen = pane.container.querySelector<HTMLElement>('.xterm-screen')
-      const dimensions = pane.terminal._core?._renderService?.dimensions?.css?.cell
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the opened terminal uses the pinned xterm renderer; this oracle reads its exact cell grid.
+      const dimensions = (pane.terminal as TerminalWithRenderMetrics)._core?._renderService
+        ?.dimensions?.css?.cell
       if (!screen || !dimensions) {
         throw new Error('Active Codex terminal has no measurable xterm screen')
       }
@@ -319,16 +322,16 @@ test.describe('Codex hidden startup composer background', () => {
       })
       .toContain(marker)
 
-    let target: CodexStartupBackgroundTarget | null = null
+    const targetResult: { value: CodexStartupBackgroundTarget | null } = { value: null }
     await expect
       .poll(
         async () => {
           try {
             const nextTarget = await readCodexStartupBackgroundTarget(orcaPage, marker)
-            target = nextTarget
+            targetResult.value = nextTarget
             return nextTarget.modelBackgroundCells >= Math.min(40, nextTarget.cols)
           } catch {
-            target = null
+            targetResult.value = null
             return false
           }
         },
@@ -338,6 +341,7 @@ test.describe('Codex hidden startup composer background', () => {
         }
       )
       .toBe(true)
+    const target = targetResult.value
     if (!target) {
       throw new Error('Codex startup background target was not captured')
     }

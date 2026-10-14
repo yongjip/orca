@@ -1,3 +1,4 @@
+import type { Repo } from '../../src/shared/repo-types'
 import type { ElectronApplication, Page } from '@stablyai/playwright-test'
 import type { SkillDiscoveryResult } from '../../src/shared/skills'
 import { test, expect } from './helpers/orca-app'
@@ -199,7 +200,7 @@ async function seedCompletedSetupExceptCapabilityReadiness(page: Page): Promise<
       addedAt: Date.now(),
       kind: 'git'
     }
-    const primaryRepo = {
+    const primaryRepo: Repo = {
       ...existingRepo,
       kind: 'git',
       hookSettings: {
@@ -254,13 +255,16 @@ async function seedCompletedSetupExceptCapabilityReadiness(page: Page): Promise<
       isMainWorktree: false
     })
 
+    if (!state.settings) {
+      throw new Error('Settings unavailable')
+    }
     store.setState({
       settings: {
         ...state.settings,
         activeRuntimeEnvironmentId: null,
         defaultTuiAgent: 'codex',
         notifications: {
-          ...state.settings?.notifications,
+          ...state.settings.notifications,
           enabled: true,
           agentTaskComplete: true
         }
@@ -304,10 +308,23 @@ async function seedCompletedSetupExceptCapabilityReadiness(page: Page): Promise<
         ]
       },
       tabsByWorktree: {
-        [secondaryWorktree.id]: [{ id: 'setup-guide-terminal-tab', title: 'Terminal' }]
+        [secondaryWorktree.id]: [
+          {
+            id: 'setup-guide-terminal-tab',
+            worktreeId: secondaryWorktree.id,
+            ptyId: null,
+            customTitle: null,
+            color: null,
+            sortOrder: 0,
+            createdAt: Date.now(),
+            title: 'Terminal'
+          }
+        ]
       },
       terminalLayoutsByTabId: {
         'setup-guide-terminal-tab': {
+          activeLeafId: 'setup-guide-left',
+          expandedLeafId: null,
           root: {
             type: 'split',
             direction: 'horizontal',

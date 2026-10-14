@@ -1,3 +1,4 @@
+import { getDefaultRepoHookSettings } from '../../src/shared/constants'
 import { openSidebarWorkspaceComposer } from './helpers/sidebar-project-dialog'
 import { mkdirSync, writeFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
@@ -107,56 +108,60 @@ async function setStableFullscreenWindow(
 }
 
 async function addRealOrcaRepo(page: Page, repoPath: string): Promise<string> {
-  return page.evaluate(async (repoPath) => {
-    await window.api.repos.add({ path: repoPath }).catch((error: unknown) => {
-      if (!/already|exists|duplicate/i.test(String(error))) {
-        throw error
+  return page.evaluate(
+    async ({ repoPath, defaultHooks }) => {
+      await window.api.repos.add({ path: repoPath }).catch((error: unknown) => {
+        if (!/already|exists|duplicate/i.test(String(error))) {
+          throw error
+        }
+      })
+
+      const store = window.__store
+      if (!store) {
+        throw new Error('window.__store unavailable')
       }
-    })
-
-    const store = window.__store
-    if (!store) {
-      throw new Error('window.__store unavailable')
-    }
-    const state = store.getState()
-    await state.fetchRepos({ runtimeEnvironmentId: null, throwOnError: true })
-    const repo = store.getState().repos.find((candidate) => candidate.path === repoPath)
-    if (!repo) {
-      throw new Error(`Real Orca repo did not load: ${repoPath}`)
-    }
-
-    await store.getState().updateRepo(repo.id, {
-      externalWorktreeVisibility: 'show',
-      hookSettings: {
-        ...repo.hookSettings,
-        setupRunPolicy: 'run-by-default',
-        setupAgentStartupPolicy: 'start-immediately'
+      const state = store.getState()
+      await state.fetchRepos({ runtimeEnvironmentId: null, throwOnError: true })
+      const repo = store.getState().repos.find((candidate) => candidate.path === repoPath)
+      if (!repo) {
+        throw new Error(`Real Orca repo did not load: ${repoPath}`)
       }
-    })
-    await store.getState().fetchWorktrees(repo.id)
 
-    const nextState = store.getState()
-    const worktree = (nextState.worktreesByRepo[repo.id] ?? []).find(
-      (candidate) => candidate.path === repoPath
-    )
-    if (!worktree) {
-      throw new Error(`Real Orca worktree did not load: ${repoPath}`)
-    }
+      await store.getState().updateRepo(repo.id, {
+        externalWorktreeVisibility: 'show',
+        hookSettings: {
+          ...defaultHooks,
+          ...repo.hookSettings,
+          setupRunPolicy: 'run-by-default',
+          setupAgentStartupPolicy: 'start-immediately'
+        }
+      })
+      await store.getState().fetchWorktrees(repo.id)
 
-    nextState.updateSettings({
-      defaultTuiAgent: 'codex',
-      disabledTuiAgents: [],
-      setupScriptLaunchMode: 'split-vertical',
-      terminalGpuAcceleration: 'on',
-      theme: 'dark'
-    })
-    nextState.setActiveRepo(repo.id)
-    nextState.setActiveView('terminal')
-    nextState.setActiveWorktree(worktree.id)
-    nextState.setRightSidebarOpen(false)
-    nextState.setSidebarOpen(true)
-    return repo.id
-  }, repoPath)
+      const nextState = store.getState()
+      const worktree = (nextState.worktreesByRepo[repo.id] ?? []).find(
+        (candidate) => candidate.path === repoPath
+      )
+      if (!worktree) {
+        throw new Error(`Real Orca worktree did not load: ${repoPath}`)
+      }
+
+      nextState.updateSettings({
+        defaultTuiAgent: 'codex',
+        disabledTuiAgents: [],
+        setupScriptLaunchMode: 'split-vertical',
+        terminalGpuAcceleration: 'on',
+        theme: 'dark'
+      })
+      nextState.setActiveRepo(repo.id)
+      nextState.setActiveView('terminal')
+      nextState.setActiveWorktree(worktree.id)
+      nextState.setRightSidebarOpen(false)
+      nextState.setSidebarOpen(true)
+      return repo.id
+    },
+    { repoPath, defaultHooks: getDefaultRepoHookSettings() }
+  )
 }
 
 async function createWorkspaceThroughComposer(page: Page, workspaceName: string): Promise<string> {
@@ -555,6 +560,8 @@ async function captureClickEvidence(
 
   return {
     ...diff,
+    changedPixels: diff.diffPixels,
+    totalPixels: diff.width * diff.height,
     leftPane: pane,
     beforeContent,
     afterContent

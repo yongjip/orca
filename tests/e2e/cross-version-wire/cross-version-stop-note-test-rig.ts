@@ -1,3 +1,4 @@
+import { isAdmissibleAgentJournalRenderItem } from '../../../src/shared/agent-session-journal-schemas'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -14,6 +15,7 @@ import { agentSessionFailureFact } from '../../../src/shared/agent-session-failu
 import { agentSessionFailureWords } from '../../../src/shared/agent-session-failure-words'
 import {
   AGENT_JOURNAL_THREAD_SCOPE,
+  type AgentJournalRenderItem,
   type AgentJournalItemBody,
   type AgentJournalTurnLifecycle
 } from '../../../src/shared/agent-session-journal-types'
@@ -125,6 +127,13 @@ export function createReleasedStopNoteRig(port: ScenarioPort, ref: string) {
       port.runtimeStub()
     )
   }
+  function parseReleasedItem(value: unknown): AgentJournalRenderItem {
+    const item = client.AgentJournalRenderItemSchema.parse(value)
+    if (!isAdmissibleAgentJournalRenderItem(item)) {
+      throw new Error('Released item is not a render item')
+    }
+    return item
+  }
   async function page(params: Record<string, unknown>): Promise<AgentSessionHistoryPage> {
     const reply = (await call('agentSession.history', { sessionId: SESSION, ...params }))[0]
     expect(reply?.ok).toBe(true)
@@ -135,7 +144,7 @@ export function createReleasedStopNoteRig(port: ScenarioPort, ref: string) {
     }
     return {
       ...result.page,
-      items: result.page.items.map((item) => client.AgentJournalRenderItemSchema.parse(item))
+      items: result.page.items.map((item) => parseReleasedItem(item))
     }
   }
   async function subscribe(cursor = journal.cursor()): Promise<RpcReply[]> {
@@ -151,9 +160,7 @@ export function createReleasedStopNoteRig(port: ScenarioPort, ref: string) {
             ...event,
             batch: {
               ...event.batch,
-              items: event.batch.items.map((item) =>
-                client.AgentJournalRenderItemSchema.parse(item)
-              )
+              items: event.batch.items.map((item) => parseReleasedItem(item))
             }
           }
         : event

@@ -136,26 +136,32 @@ test('recovers the same startup exec through an isolated headless orca serve', a
     startedPath = path.join(homePath, `.sta4067-${runId}.started`)
     releasePath = path.join(homePath, `.sta4067-${runId}.release`)
     removeProfile = installZshExecProfile(homePath, runId, { releasePath, startedPath })
-    client = await launchPairedWebClient(host.app, host.offer, { waitForWorkspace: false })
+    const activeClient = await launchPairedWebClient(host.app, host.offer, {
+      waitForWorkspace: false
+    })
+    client = activeClient
     await host.client.call('repo.add', { path: testRepoPath, kind: 'git' })
-    await client.page.locator('[data-worktree-sidebar]').waitFor({
+    await activeClient.page.locator('[data-worktree-sidebar]').waitFor({
       state: 'visible',
       timeout: 30_000
     })
     await expect
       .poll(
-        () => client.page.evaluate(() => window.__store?.getState().allWorktrees()[0]?.id ?? null),
+        () =>
+          activeClient.page.evaluate(
+            () => window.__store?.getState().allWorktrees()[0]?.id ?? null
+          ),
         { timeout: 30_000 }
       )
       .not.toBeNull()
-    const worktreeId = await client.page.evaluate(
+    const worktreeId = await activeClient.page.evaluate(
       () => window.__store?.getState().allWorktrees()[0]?.id ?? null
     )
     if (!worktreeId) {
       throw new Error('Headless owner did not publish its worktree')
     }
     const created = await createStartupExecTerminal(
-      client.page,
+      activeClient.page,
       worktreeId,
       runId,
       ledgerPath,
@@ -165,7 +171,7 @@ test('recovers the same startup exec through an isolated headless orca serve', a
     )
     terminal = created.terminal
     await releaseExecBarrier(startedPath, releasePath, ledgerPath)
-    await expectStartupExecRecovery(client.page, created, runId)
+    await expectStartupExecRecovery(activeClient.page, created, runId)
     expectLedger(ledgerPath)
   } finally {
     try {

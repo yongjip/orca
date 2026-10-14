@@ -134,7 +134,7 @@ async function seedDuplicateTabOrderProjectGroups(
     state.setGroupBy('repo')
     state.setProjectOrderBy('manual')
 
-    const groups = []
+    const groups: NonNullable<Awaited<ReturnType<typeof state.createProjectGroup>>>[] = []
     for (const name of groupNames) {
       const created = await state.createProjectGroup(name, 'local')
       if (!created) {

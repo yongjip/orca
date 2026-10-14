@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
+import { basename } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { shellEscape, wrapRemoteCommandForPosixShell } from './ssh-connection-utils'
 
@@ -87,7 +88,9 @@ describe('wrapRemoteCommandForPosixShell', () => {
 })
 
 function runThroughShell(shell: string, command: string, input?: string) {
-  return spawnSync(shell, ['-c', wrapRemoteCommandForPosixShell(command)], {
+  // csh reads the user's startup file even for -c; isolate the parser from those hooks.
+  const flags = /^(csh|tcsh)$/.test(basename(shell)) ? ['-f', '-c'] : ['-c']
+  return spawnSync(shell, [...flags, wrapRemoteCommandForPosixShell(command)], {
     encoding: 'utf8',
     input
   })

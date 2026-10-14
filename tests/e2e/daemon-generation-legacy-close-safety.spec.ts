@@ -100,7 +100,6 @@ function launchLegacyCloseClient(options: {
   const child = fork(runtime.legacyCloseClientEntryPath, ['--config', configPath], {
     cwd: runtime.userDataDir,
     execPath: runtime.electronPath,
-    windowsHide: true,
     env: {
       ...process.env,
       ELECTRON_RUN_AS_NODE: '1',

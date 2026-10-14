@@ -114,8 +114,10 @@ test('R1 paired remote bulk-open freeze oracle @freeze-repro', async ({
 }, testInfo) => {
   test.setTimeout(420_000)
   const host = await launchHeadlessPairedRuntimeHost()
-  let webClient: PairedWebClient | null = null
-  let desktopClient: PairedElectronClient | null = null
+  const clients: { web: PairedWebClient | null; desktop: PairedElectronClient | null } = {
+    web: null,
+    desktop: null
+  }
   let disposeSessions: (() => Promise<void>) | null = null
   try {
     const added = await host.client.call<{ repo: { id: string } }>('repo.add', {
@@ -137,13 +139,13 @@ test('R1 paired remote bulk-open freeze oracle @freeze-repro', async ({
     // Prefer full desktop pair when web-client store hydration is flaky in this env.
     const page = await (async () => {
       if (USE_DESKTOP_PAIR) {
-        desktopClient = await launchPairedElectronClient(host.offer, testInfo, 'freeze-r1')
-        return desktopClient.page
+        clients.desktop = await launchPairedElectronClient(host.offer, testInfo, 'freeze-r1')
+        return clients.desktop.page
       }
-      webClient = await launchPairedWebClient(host.app, host.offer, {
+      clients.web = await launchPairedWebClient(host.app, host.offer, {
         terminalParkingDelayMs: 500
       })
-      return webClient.page
+      return clients.web.page
     })()
 
     await page.waitForFunction(() => Boolean(window.__store), null, { timeout: 60_000 })
@@ -185,8 +187,8 @@ test('R1 paired remote bulk-open freeze oracle @freeze-repro', async ({
     expect(report.worktreeCount).toBe(3)
   } finally {
     await disposeSessions?.()
-    await webClient?.dispose()
-    await desktopClient?.dispose()
+    await clients.web?.dispose()
+    await clients.desktop?.dispose()
     await host.dispose()
   }
 })

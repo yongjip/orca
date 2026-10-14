@@ -1,3 +1,4 @@
+import { getOrcadSshDeployment } from '../../src/shared/runtime-environments'
 import type { ElectronApplication } from '@stablyai/playwright-test'
 import { expect, test } from './helpers/orca-app'
 import { createRestartSession } from './helpers/orca-restart'
@@ -105,10 +106,10 @@ for (const selectedHost of ['A', 'B'] as const) {
       console.log('[adopt-existing-managed-host]', await reconnect(page, adoptedTargetId))
       const environments = await page.evaluate(() => window.api.runtimeEnvironments.list())
       const environmentA = environments.find(
-        (entry) => entry.orcadDeployment?.sshTargetId === seededA.targetId
+        (entry) => getOrcadSshDeployment(entry)?.sshTargetId === seededA.targetId
       )
       const environmentB = environments.find(
-        (entry) => entry.orcadDeployment?.sshTargetId === adoptedTargetId
+        (entry) => getOrcadSshDeployment(entry)?.sshTargetId === adoptedTargetId
       )
       if (!environmentA || !environmentB) {
         throw new Error('Missing converted host')

@@ -58,7 +58,7 @@ test('publishes, updates, revokes, and deletes without losing local state', asyn
   const source = join(sourceRoot, '.agents', 'skills', SKILL_NAME)
   const home = await electronApp.evaluate(({ app }) => app.getPath('home'))
   const globalSkill = join(home, '.agents', 'skills', SKILL_NAME)
-  let packageId: string | null = null
+  const cloudPackage: { id: string | null } = { id: null }
   let physicalEnvironmentId: string | null = null
   let pairedHost: HeadlessPairedRuntimeHost | null = null
   let sshTargetId: string | null = null
@@ -80,7 +80,7 @@ test('publishes, updates, revokes, and deletes without losing local state', asyn
       'Initial staging journey',
       undefined,
       (preview) => {
-        packageId = preview.packageId
+        cloudPackage.id = preview.packageId
       }
     )
     for (const target of externalTargets(physicalEnvironmentId, sshTargetId)) {
@@ -204,13 +204,17 @@ test('publishes, updates, revokes, and deletes without losing local state', asyn
     )
     expect(removed).toMatchObject({ status: 'ok', value: { status: 'removed' } })
     expect(existsSync(globalSkill)).toBe(false)
+    const publishedPackageId = cloudPackage.id
+    if (!publishedPackageId) {
+      throw new Error('Published cloud package unavailable')
+    }
     expect(
-      await orcaPage.evaluate((id) => window.api.skills.getPackage(id), packageId)
+      await orcaPage.evaluate((id) => window.api.skills.getPackage(id), publishedPackageId)
     ).toMatchObject({ status: 'ok' })
     expect(
-      await orcaPage.evaluate((id) => window.api.skills.deletePackage(id), packageId)
+      await orcaPage.evaluate((id) => window.api.skills.deletePackage(id), publishedPackageId)
     ).toMatchObject({ status: 'ok' })
-    packageId = null
+    cloudPackage.id = null
   } finally {
     for (const target of externalTargets(physicalEnvironmentId, sshTargetId)) {
       await orcaPage
@@ -242,9 +246,9 @@ test('publishes, updates, revokes, and deletes without losing local state', asyn
         .catch(() => undefined)
     }
     await pairedHost?.dispose().catch(() => undefined)
-    if (packageId) {
+    if (cloudPackage.id) {
       await orcaPage
-        .evaluate((id) => window.api.skills.deletePackage(id), packageId)
+        .evaluate((id) => window.api.skills.deletePackage(id), cloudPackage.id)
         .catch(() => undefined)
     }
     rmSync(globalSkill, { recursive: true, force: true })
@@ -420,10 +424,10 @@ function expectPhysicalInstall(
     expect(skill?.canonicalPath).toContain(`.agents\\skills\\${SKILL_NAME}`)
   } else if (target === 'wsl') {
     expect(skill?.canonicalPath).toMatch(/^\/home\/[^/]+\/\.agents\/skills\//)
-    expect(skill?.canonicalPath.endsWith(`/${SKILL_NAME}`)).toBe(true)
+    expect(skill?.canonicalPath?.endsWith(`/${SKILL_NAME}`)).toBe(true)
   } else {
     expect(skill?.canonicalPath).toMatch(/^\//)
-    expect(skill?.canonicalPath.endsWith(`/.agents/skills/${SKILL_NAME}`)).toBe(true)
+    expect(skill?.canonicalPath?.endsWith(`/.agents/skills/${SKILL_NAME}`)).toBe(true)
   }
 }
 
@@ -454,7 +458,9 @@ async function expectManagedRemoteVersion(
       candidate.destination.scope === 'global' &&
       candidate.destination.executionTarget?.kind === 'ssh' &&
       candidate.destination.executionTarget.connectionId ===
-        target.destination.executionTarget?.connectionId
+        (target.destination.scope === 'global' && target.destination.executionTarget?.kind === 'ssh'
+          ? target.destination.executionTarget.connectionId
+          : undefined)
     )
   })
   expect(install).toMatchObject({

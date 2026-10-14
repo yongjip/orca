@@ -50,7 +50,19 @@ function createV2Framing(args: Parameters<typeof createDirectSocketFraming>[0]) 
       desktopPublicKeyB64: args.serverPublicKeyB64,
       transport: 'direct'
     }),
-    socket: args.socket,
+    socket: {
+      get OPEN() {
+        return args.socket.OPEN
+      },
+      get readyState() {
+        return args.socket.readyState
+      },
+      get bufferedAmount() {
+        return args.socket.bufferedAmount
+      },
+      send: (frame) =>
+        args.socket.send(typeof frame === 'string' ? frame : new Uint8Array(frame).buffer)
+    },
     deviceToken: args.deviceToken,
     decodeBinary: websocketPayloadToUint8,
     onReadyAccepted: () => {

@@ -1,3 +1,4 @@
+import type { TerminalWithRenderMetrics } from './helpers/terminal-render-metrics'
 import { randomUUID } from 'node:crypto'
 import { rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -195,7 +196,10 @@ async function readTerminalRightEdgeOverpaint(page: Page): Promise<{
       }
     }
 
-    const cellWidth = pane.terminal._core?._renderService?.dimensions?.css?.cell?.width ?? 0
+    const cellWidth =
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the opened terminal uses the pinned xterm renderer; this oracle reads its exact cell grid.
+      (pane.terminal as TerminalWithRenderMetrics)._core?._renderService?.dimensions?.css?.cell
+        ?.width ?? 0
     const maxRight = screenRect.right + Math.max(1, cellWidth * 0.5)
     const offenders = Array.from(rows.querySelectorAll<HTMLElement>('span'))
       .map((span) => {
@@ -319,9 +323,11 @@ async function readTerminalRenderDiagnostics(page: Page): Promise<TerminalRender
           return {
             tabId: managerTabId,
             paneId: managedPane.id,
-            hasComplexScriptOutput: managedPane.hasComplexScriptOutput === true,
+            hasComplexScriptOutput:
+              paneManager.getRenderingDiagnostics().find((entry) => entry.paneId === managedPane.id)
+                ?.hasComplexScriptOutput === true,
             hasMarker: serializedText.includes('LONG_TABLE_SCROLL_RESTORE_'),
-            hasWebgl: Boolean(managedPane.webglAddon)
+            hasWebgl: paneManager.hasWebglRenderer(managedPane.id)
           }
         })
     )
@@ -330,8 +336,10 @@ async function readTerminalRenderDiagnostics(page: Page): Promise<TerminalRender
       rows: pane.terminal.rows,
       viewportY: buffer.viewportY,
       baseY: buffer.baseY,
-      hasComplexScriptOutput: pane.hasComplexScriptOutput === true,
-      hasWebgl: Boolean(pane.webglAddon),
+      hasComplexScriptOutput:
+        manager?.getRenderingDiagnostics().find((entry) => entry.paneId === pane.id)
+          ?.hasComplexScriptOutput === true,
+      hasWebgl: manager?.hasWebglRenderer(pane.id) ?? false,
       canvasCount: pane.container.querySelectorAll('canvas').length,
       cursorHidden: terminalCore?.coreService?.isCursorHidden ?? null,
       visibleLineTails,

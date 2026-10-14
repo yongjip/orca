@@ -1,3 +1,4 @@
+import type { TerminalWithRenderMetrics } from './helpers/terminal-render-metrics'
 import type { Page } from '@stablyai/playwright-test'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -118,7 +119,9 @@ async function readActiveTerminalRasterTarget(page: Page): Promise<TerminalRaste
     const manager = tabId ? window.__paneManagers?.get(tabId) : null
     const pane = manager?.getActivePane?.() ?? manager?.getPanes?.()[0] ?? null
     const screen = pane?.container.querySelector<HTMLElement>('.xterm-screen')
-    const dimensions = pane?.terminal._core?._renderService?.dimensions?.css?.cell
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the opened terminal uses the pinned xterm renderer; this oracle reads its exact cell grid.
+    const dimensions = (pane?.terminal as TerminalWithRenderMetrics | undefined)?._core
+      ?._renderService?.dimensions?.css?.cell
     if (!pane || !screen || !dimensions) {
       throw new Error('Active terminal screen is unavailable')
     }

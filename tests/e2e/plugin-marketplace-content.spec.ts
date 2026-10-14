@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os'
 import { join, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
-import type { Page, TestInfo } from '@stablyai/playwright-test'
+import type { Page } from '@stablyai/playwright-test'
 import { expect, test } from '@stablyai/playwright-test'
 import { createRestartSession } from './helpers/orca-restart'
 
@@ -274,7 +274,14 @@ async function runMarketplaceJourney(page: Page): Promise<void> {
 test('installs and applies official Phase 1 content from a fresh profile', async ({}, testInfo) => {
   test.setTimeout(180_000)
   const fixture = await createMarketplaceFixture()
-  const session = createRestartSession(testInfo as TestInfo, fixture.gitEnvironment)
+  const session = createRestartSession(
+    testInfo,
+    Object.fromEntries(
+      Object.entries(fixture.gitEnvironment).flatMap(([key, value]) =>
+        value === undefined ? [] : [[key, value]]
+      )
+    )
+  )
   let launched: Awaited<ReturnType<typeof session.launch>> | null = null
   try {
     launched = await session.launch()

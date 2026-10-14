@@ -1,3 +1,4 @@
+import { getDefaultRepoHookSettings } from '../../src/shared/constants'
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -85,18 +86,12 @@ const test = base.extend({
       ORCA_E2E_CANARY_LEDGER: canaryLedgerPath,
       ORCA_E2E_SIGNAL_LEDGER: signalLedgerPath
     },
-    { option: true }
+    { scope: 'test' }
   ]
 })
 
 function readSpawnLedger(): SpawnEvent[] {
-  if (!existsSync(spawnLedgerPath)) {
-    return []
-  }
-  return readFileSync(spawnLedgerPath, 'utf8')
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as SpawnEvent)
+  return readJsonLines<SpawnEvent>(spawnLedgerPath)
 }
 
 function readJsonLines<T>(filePath: string): T[] {
@@ -159,11 +154,8 @@ function terminalIdentity(terminal: RuntimeTerminalSummary): TerminalIdentity {
 }
 
 function liveTerminalIdentity(terminal: RuntimeTerminalSummary) {
-  return {
-    ...terminalIdentity(terminal),
-    connected: terminal.connected,
-    writable: terminal.writable
-  }
+  const { connected, writable } = terminal
+  return { ...terminalIdentity(terminal), connected, writable }
 }
 
 function readDaemonPid(userDataDir: string): number {
@@ -542,7 +534,7 @@ test('adopts runtime-owned agent and Setup PTYs on first mount', async ({
   await expect
     .poll(() =>
       orcaPage.evaluate(
-        async ({ repoId, command, windowsShell }) => {
+        async ({ repoId, command, windowsShell, defaultHooks }) => {
           const state = window.__store?.getState()
           await state?.fetchRepos({ runtimeEnvironmentId: null, throwOnError: true })
           const repo = window.__store?.getState().repos.find((candidate) => candidate.id === repoId)
@@ -550,7 +542,11 @@ test('adopts runtime-owned agent and Setup PTYs on first mount', async ({
             return false
           }
           await window.__store?.getState().updateRepo(repoId, {
-            hookSettings: { ...repo.hookSettings, setupAgentStartupPolicy: 'start-immediately' }
+            hookSettings: {
+              ...defaultHooks,
+              ...repo.hookSettings,
+              setupAgentStartupPolicy: 'start-immediately'
+            }
           })
           await window.__store?.getState().updateSettings({
             agentCmdOverrides: { codex: command },
@@ -561,7 +557,12 @@ test('adopts runtime-owned agent and Setup PTYs on first mount', async ({
           })
           return true
         },
-        { repoId, command: fakeCodexCommand, windowsShell: FAKE_AGENT_WINDOWS_SHELL }
+        {
+          repoId,
+          command: fakeCodexCommand,
+          windowsShell: FAKE_AGENT_WINDOWS_SHELL,
+          defaultHooks: getDefaultRepoHookSettings()
+        }
       )
     )
     .toBe(true)

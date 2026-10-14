@@ -1,3 +1,4 @@
+import { getOrcadSshDeployment } from '../../src/shared/runtime-environments'
 /**
  * Upgrading from 1.4.224 keeps the terminals its relay still runs, on a real Docker SSH host:
  *
@@ -168,7 +169,7 @@ test('terminals a 1.4.224 relay keeps running stay usable in their old tabs afte
       .toEqual([expect.objectContaining({ ptyId: bridgedPtyId, state: 'live' })])
 
     const environment = (await page.evaluate(() => window.api.runtimeEnvironments.list())).find(
-      (entry) => entry.orcadDeployment?.sshTargetId === targetId
+      (entry) => getOrcadSshDeployment(entry)?.sshTargetId === targetId
     )
     if (!environment) {
       throw new Error('Converted host is missing from the environment catalog')

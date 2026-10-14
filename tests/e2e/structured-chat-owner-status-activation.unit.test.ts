@@ -55,7 +55,7 @@ function openHost(): void {
       }),
       closeSession,
       releaseAcquisition: async () => true,
-      dispatch: async () => ({ state: 'rejected', reason: 'unused' }),
+      dispatch: async () => ({ state: 'unknown', reason: 'unused' }),
       cancelTurn: async () => ({ cancelled: false }),
       answerPrompt: async () => undefined,
       setOption: async () => undefined

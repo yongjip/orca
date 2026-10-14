@@ -78,16 +78,16 @@ async function patchAtlasCounter(page: Page): Promise<boolean> {
           : null
     const manager = tabId ? window.__paneManagers?.get(tabId) : null
     const pane = manager?.getActivePane?.() ?? manager?.getPanes?.()[0] ?? null
-    const webglAddon = pane?.webglAddon
-    if (!pane || !webglAddon) {
+    const webglActive = pane && manager?.hasWebglRenderer(pane.id)
+    if (!pane || !manager || !webglActive) {
       return false
     }
     const globalWithCounter = window as typeof window & {
       __imagePasteAtlasResetCount?: number
     }
     globalWithCounter.__imagePasteAtlasResetCount = 0
-    const originalClearTextureAtlas = webglAddon.clearTextureAtlas.bind(webglAddon)
-    webglAddon.clearTextureAtlas = () => {
+    const originalClearTextureAtlas = manager.clearWebglTextureAtlases.bind(manager)
+    manager.clearWebglTextureAtlases = () => {
       globalWithCounter.__imagePasteAtlasResetCount =
         (globalWithCounter.__imagePasteAtlasResetCount ?? 0) + 1
       originalClearTextureAtlas()
@@ -139,7 +139,7 @@ test.describe('terminal image paste WebGL recovery @headful', () => {
                   : null
             const manager = tabId ? window.__paneManagers?.get(tabId) : null
             const pane = manager?.getActivePane?.() ?? manager?.getPanes?.()[0] ?? null
-            return Boolean(pane?.webglAddon)
+            return Boolean(pane && manager?.hasWebglRenderer(pane.id))
           },
           null,
           { timeout: 5_000 }

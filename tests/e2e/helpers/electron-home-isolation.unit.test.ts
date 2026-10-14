@@ -36,9 +36,11 @@ describe('createElectronHomeIsolation', () => {
         CLAUDE_CONFIG_DIR: '/real/claude',
         ZDOTDIR: '/real/zdotdir',
         ORCA_DISABLE_MACOS_LOGIN_SHELL: 'false',
-        PATH: '/bin'
+        PATH: '/bin',
+        UNSET_INHERITED: undefined,
+        REMOVE_FROM_CHILD: 'parent-value'
       },
-      launchEnv: { TEST_TOKEN: 'safe' },
+      launchEnv: { TEST_TOKEN: 'safe', REMOVE_FROM_CHILD: undefined, EMPTY_VALUE: '' },
       extraEnv: { EXTRA_TEST_FLAG: '1' },
       userDataDir,
       realHome: '/real/home'
@@ -51,11 +53,14 @@ describe('createElectronHomeIsolation', () => {
     expect(isolation.env).toMatchObject({
       PATH: '/bin',
       TEST_TOKEN: 'safe',
+      EMPTY_VALUE: '',
       EXTRA_TEST_FLAG: '1',
       HOME: canonicalHome,
       USERPROFILE: canonicalHome,
       ORCA_E2E_USER_DATA_DIR: userDataDir
     })
+    expect(isolation.env).not.toHaveProperty('UNSET_INHERITED')
+    expect(isolation.env).not.toHaveProperty('REMOVE_FROM_CHILD')
     expect(isolation.env.CODEX_HOME).toBeUndefined()
     expect(isolation.env.ORCA_CODEX_HOME).toBeUndefined()
     expect(isolation.env.CLAUDE_CONFIG_DIR).toBeUndefined()

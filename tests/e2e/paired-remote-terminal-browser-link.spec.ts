@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { Page } from '@stablyai/playwright-test'
@@ -49,7 +50,7 @@ async function readTabInventory(
   hostRegisteredBrowserPages: number
   hostTerminalTabs: number
 }> {
-  return page.evaluate(
+  const inventory = await page.evaluate(
     async ({ environmentId, worktreeId }) => {
       const state = window.__store?.getState()
       const [sessionResponse, browserResponse] = await Promise.all([
@@ -78,16 +79,21 @@ async function readTabInventory(
           (tab) => tab.contentType === 'browser'
         ).length,
         clientTerminalTabs: (state?.tabsByWorktree[worktreeId] ?? []).length,
-        hostAuthoritativeBrowserTabs: sessionResponse.result.tabs.filter(
-          (tab) => tab.type === 'browser'
-        ).length,
-        hostRegisteredBrowserPages: browserResponse.result.tabs.length,
-        hostTerminalTabs: sessionResponse.result.tabs.filter((tab) => tab.type === 'terminal')
-          .length
+        sessionResult: sessionResponse.result,
+        browserResult: browserResponse.result
       }
     },
     { environmentId, worktreeId }
   )
+  const { sessionResult, browserResult, ...clientCounts } = inventory
+  const session = z.object({ tabs: z.array(z.object({ type: z.string() })) }).parse(sessionResult)
+  const browser = z.object({ tabs: z.array(z.unknown()) }).parse(browserResult)
+  return {
+    ...clientCounts,
+    hostAuthoritativeBrowserTabs: session.tabs.filter((tab) => tab.type === 'browser').length,
+    hostRegisteredBrowserPages: browser.tabs.length,
+    hostTerminalTabs: session.tabs.filter((tab) => tab.type === 'terminal').length
+  }
 }
 
 async function startPageServer(): Promise<{ server: Server; url: string }> {

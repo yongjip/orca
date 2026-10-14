@@ -76,7 +76,7 @@ const test = base.extend({
       ORCA_E2E_SPAWN_LEDGER: spawnLedgerPath,
       ORCA_E2E_INTERRUPTION_LEDGER: interruptionLedgerPath
     },
-    { option: true }
+    { scope: 'test' }
   ]
 })
 

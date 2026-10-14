@@ -19927,6 +19927,7 @@
     "terminal": "Terminal"
   },
   "mergetrain": {
+    "title": "Mergetrain",
     "description": "Register this branch and validate the repository queue together. Deployment remains a separate approval step.",
     "validating": "Validating the queue on its execution host…",
     "registering": "Registering this branch…",

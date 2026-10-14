@@ -1680,7 +1680,13 @@ export function createRelayApp(
     const userIds = body.data.userId ? [body.data.userId] : (shadow?.userIdsOf(relayHostId) ?? [])
     try {
       const cellIds = new Set<string>()
-      const users = []
+      const users: {
+        userId: string
+        database: Awaited<ReturnType<typeof operations.assignments.hostWhereabouts>>
+        seats: ReturnType<ShadowSeatDirectory['seatsOf']>
+        recentlyLeft: ReturnType<ShadowSeatDirectory['recentlyLeftOf']>
+        verdict: ReturnType<typeof classifyShadowSeat> | null
+      }[] = []
       for (const userId of userIds) {
         const identity = { userId, relayHostId }
         const database = await operations.assignments.hostWhereabouts(identity)

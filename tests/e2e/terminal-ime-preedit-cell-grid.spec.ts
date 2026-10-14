@@ -1,3 +1,4 @@
+import type { TerminalWithRenderMetrics } from './helpers/terminal-render-metrics'
 import { expect, test } from './helpers/orca-app'
 import { closeTerminalImePaneArena, openTerminalImePaneArena } from './terminal-ime-pane-arena'
 import { setImeComposition } from './terminal-ime-cdp-composition'
@@ -55,7 +56,9 @@ for (const dpr of [1, 1.25, 2]) {
                 const screen = terminal.element!.querySelector<HTMLElement>('.xterm-screen')!
                 const preedit = screen.querySelector<HTMLElement>('.xterm-composition-preedit')!
                 // The canvas width rounds independently of fractional WebGL cell widths.
-                const cellWidth = terminal._core._renderService.dimensions.css.cell.width
+                // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the opened terminal uses the pinned xterm renderer; this oracle reads its exact cell grid.
+                const cellWidth = (terminal as TerminalWithRenderMetrics)._core._renderService
+                  .dimensions.css.cell.width
                 const line = terminal.buffer.active.getLine(terminal.buffer.active.baseY)!
                 const committed: { text: string; column: number; width: number }[] = []
                 const end = line.translateToString(true).length
@@ -164,7 +167,9 @@ for (const dpr of [1, 1.25, 2]) {
                 const terminal = window
                   .__paneManagers!.get(state.activeTabId!)!
                   .getActivePane()!.terminal
-                const cellWidth = terminal._core._renderService.dimensions.css.cell.width
+                // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the opened terminal uses the pinned xterm renderer; this oracle reads its exact cell grid.
+                const cellWidth = (terminal as TerminalWithRenderMetrics)._core._renderService
+                  .dimensions.css.cell.width
                 const preedit = terminal.element!.querySelector('.xterm-composition-preedit')!
                 return Math.abs(preedit.getBoundingClientRect().width - 16 * cellWidth)
               })

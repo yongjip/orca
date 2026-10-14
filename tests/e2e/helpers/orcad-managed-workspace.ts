@@ -1,3 +1,4 @@
+import { getOrcadSshDeployment } from '../../../src/shared/runtime-environments'
 /**
  * A repository workspace on an orcad-managed Docker SSH host, reached the way users reach one:
  * a saved SSH profile whose first connect deploys the managed server. Plus the terminal moves the
@@ -132,7 +133,7 @@ export async function relaunchManagedApp(
 
 export async function managedEnvironmentId(page: Page, targetId: string): Promise<string> {
   const environment = (await page.evaluate(() => window.api.runtimeEnvironments.list())).find(
-    (entry) => entry.orcadDeployment?.sshTargetId === targetId
+    (entry) => getOrcadSshDeployment(entry)?.sshTargetId === targetId
   )
   if (!environment) {
     throw new Error(`No managed server registered for ${targetId}`)

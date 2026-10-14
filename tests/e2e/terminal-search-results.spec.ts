@@ -46,7 +46,10 @@ test('terminal search counts real matches and repeat find selects the query', as
   await expect(input).toBeFocused()
   await expect
     .poll(() =>
-      input.evaluate((element) => ({ start: element.selectionStart, end: element.selectionEnd }))
+      input.evaluate((element) => ({
+        start: element instanceof HTMLInputElement ? element.selectionStart : null,
+        end: element instanceof HTMLInputElement ? element.selectionEnd : null
+      }))
     )
     .toEqual({ start: 0, end: query.length })
   await orcaPage.screenshot({ path: testInfo.outputPath('search-query-selected.png') })

@@ -54,7 +54,7 @@ export function MergetrainPanel({
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="w-full justify-start">
             {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-            Mergetrain
+            {translate('mergetrain.title', 'Mergetrain')}
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent>

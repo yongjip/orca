@@ -199,7 +199,9 @@ async function installLinearPersistenceBackend(
         if (!teamId) {
           return []
         }
-        return (payload.fixture.statesByTeamId as Record<string, (typeof STATE_A)[]>)[teamId] ?? []
+        return (
+          Object.entries(payload.fixture.statesByTeamId).find(([id]) => id === teamId)?.[1] ?? []
+        )
       })
 
       ipcMain.removeHandler('linear:teamLabels')

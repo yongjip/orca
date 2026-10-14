@@ -1,3 +1,4 @@
+import type { TerminalWithRenderMetrics } from './helpers/terminal-render-metrics'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -95,8 +96,9 @@ async function terminalWheelTarget(
       x: rect.left + rect.width / 2,
       y: rect.top + Math.min(rect.height - 1, 40),
       cellHeight:
-        pane.terminal._core?._renderService?.dimensions?.css?.cell?.height ??
-        rect.height / pane.terminal.rows
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the opened terminal uses the pinned xterm renderer; this oracle reads its exact cell grid.
+        (pane.terminal as TerminalWithRenderMetrics)._core?._renderService?.dimensions?.css?.cell
+          ?.height ?? rect.height / pane.terminal.rows
     }
   })
 }

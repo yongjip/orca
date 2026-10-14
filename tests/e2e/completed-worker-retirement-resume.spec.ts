@@ -26,7 +26,7 @@ import { splitWorktreeIdForFilesystem } from '../../src/shared/worktree/id'
 const PROVIDER_SESSION_ID = '019feb51-2269-71c2-89c6-faa8dc65c8dc'
 
 const test = base.extend({
-  launchEnv: [completedWorkerLaunchEnv, { option: true }]
+  launchEnv: [completedWorkerLaunchEnv, { scope: 'test' }]
 })
 
 test.describe.configure({ mode: 'serial' })
@@ -278,7 +278,9 @@ for (const closeMode of ['terminal-close-cli', 'worker-release'] as const) {
             const state = window.__store?.getState()
             return {
               tabPresent: Boolean(
-                state?.tabsByWorktree[worktreeId]?.some((tab) => tab.id === tabId)
+                (worktreeId ? state?.tabsByWorktree[worktreeId] : undefined)?.some(
+                  (tab) => tab.id === tabId
+                )
               ),
               recoveryPresent: Boolean(state?.sleepingAgentSessionsByPaneKey[paneKey])
             }

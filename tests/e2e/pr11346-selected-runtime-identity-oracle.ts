@@ -1,3 +1,8 @@
+import type {
+  DirectSshWorktreeFetchOptions,
+  WorktreeFetchOptions
+} from '../../src/renderer/src/store/slices/worktree-helpers'
+import type { HostQualifiedDetectedWorktreeResult } from '../../src/shared/detected-worktree-provider-contract'
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, realpathSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
@@ -116,22 +121,33 @@ export async function installFinalActivationGate(page: Page, targetPath: string)
       release,
       waiting: false
     }
-    store.setState({
-      fetchWorktrees: async (...args: Parameters<typeof originalFetchWorktrees>) => {
-        const result = await originalFetchWorktrees(...args)
-        const targetRepo = store
-          .getState()
-          .repos.find(
-            (repo) =>
-              repo.path === pathToGate && repo.executionHostId?.startsWith('runtime:') === true
-          )
-        if (targetRepo?.id === args[0]) {
-          gateWindow.__pr11346ActivationGate!.waiting = true
-          await released
-        }
-        return result
+    const gatedStore = store
+    function gatedFetchWorktrees(
+      repoId: string,
+      options: DirectSshWorktreeFetchOptions
+    ): Promise<HostQualifiedDetectedWorktreeResult>
+    function gatedFetchWorktrees(repoId: string, options?: WorktreeFetchOptions): Promise<boolean>
+    async function gatedFetchWorktrees(
+      repoId: string,
+      options?: WorktreeFetchOptions | DirectSshWorktreeFetchOptions
+    ): Promise<boolean | HostQualifiedDetectedWorktreeResult> {
+      const result =
+        options && 'directSshAuthority' in options
+          ? await originalFetchWorktrees(repoId, options)
+          : await originalFetchWorktrees(repoId, options)
+      const targetRepo = gatedStore
+        .getState()
+        .repos.find(
+          (repo) =>
+            repo.path === pathToGate && repo.executionHostId?.startsWith('runtime:') === true
+        )
+      if (targetRepo?.id === repoId) {
+        gateWindow.__pr11346ActivationGate!.waiting = true
+        await released
       }
-    })
+      return result
+    }
+    store.setState({ fetchWorktrees: gatedFetchWorktrees })
   }, targetPath)
 }
 
@@ -189,7 +205,7 @@ export async function injectSameIdLocalActivationCollision(
         repoId: localRepoId,
         path: localCollisionPath,
         hostId: 'local' as const,
-        runtimeOwnerEnvironmentId: null
+        runtimeOwnerEnvironmentId: undefined
       }
       store.setState({
         repos: [

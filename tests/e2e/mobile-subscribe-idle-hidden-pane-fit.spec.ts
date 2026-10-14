@@ -1,3 +1,4 @@
+import { pairedRuntimeConnectionFromOffer } from '../../src/shared/paired-runtime-connection'
 /**
  * A phone subscribing to an idle terminal after a relaunch must get its first snapshot on its grid.
  *
@@ -131,7 +132,7 @@ test('phone subscribe to an idle relaunched terminal behind another tab fits the
     const hiddenPane = await paneGrid(second.page, ptyId)
 
     const offer = await createRuntimeDesktopPairingOffer(second.page)
-    const pairing = decodePairingOffer(offer.pairingUrl)
+    const pairing = pairedRuntimeConnectionFromOffer(decodePairingOffer(offer.pairingUrl))
     let handle: string | undefined
     // The new tab's PTY spawn refuses terminal.list until its pane binds.
     await expect

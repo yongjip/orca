@@ -91,7 +91,7 @@ const test = base.extend({
       ORCA_E2E_CLI_ENTRY: cliEntry,
       ORCA_E2E_CLI_LEDGER: cliLedgerPath
     },
-    { option: true }
+    { scope: 'test' }
   ]
 })
 

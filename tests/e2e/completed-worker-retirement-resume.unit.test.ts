@@ -1,3 +1,4 @@
+import { eraseRpcMethods } from '../../src/main/runtime/rpc/core'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SleepingAgentSessionRecord } from '../../src/shared/agent-session-resume'
@@ -227,7 +228,7 @@ function expectCanaryUnchanged(): void {
 }
 
 function orchestrationMethod(name: string) {
-  const method = ORCHESTRATION_METHODS.find((candidate) => candidate.name === name)
+  const method = eraseRpcMethods(ORCHESTRATION_METHODS).find((candidate) => candidate.name === name)
   if (!method) {
     throw new Error(`Missing orchestration method: ${name}`)
   }

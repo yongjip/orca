@@ -19,7 +19,7 @@ import type { ElectronApplication, Page } from '@stablyai/playwright-test'
 import { expect, test } from './helpers/orca-app'
 import { waitForSessionReady } from './helpers/store'
 import { createRestartSession } from './helpers/orca-restart'
-import { convertThenRetire, managedServer, reconnect } from './helpers/orcad-convert-flow'
+import { convertAndRetain, managedServer, reconnect } from './helpers/orcad-convert-flow'
 import { seedRelayEraProfile } from './helpers/orcad-upgrade-profile'
 import { ORCAD_CONVERT_HOST_ENV, startOrcadConvertHost } from './helpers/orcad-convert-host'
 import { orcaCliResult, runCompiledOrcaCli } from './helpers/compiled-orca-cli'
@@ -564,7 +564,7 @@ test('@orcad-cli-convert a seeded relay-era profile converts its Windows host, k
     const upgraded = await session.launch({ onStderr: sshStderr })
     app = upgraded.app
     await waitForSessionReady(upgraded.page)
-    await convertThenRetire(upgraded.page, session.userDataDir, seeded, FLAGS_FILE)
+    await convertAndRetain(upgraded.page, session.userDataDir, seeded)
 
     const environmentId = await waitForManaged(upgraded.page, seeded.targetId)
     expect(await environmentIds(session.userDataDir)).toContain(environmentId)

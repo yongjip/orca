@@ -19584,6 +19584,7 @@
     "updateFailed": "프로젝트 필드를 업데이트하지 못했습니다"
   },
   "mergetrain": {
+    "title": "Mergetrain",
     "waiting": "대기",
     "running": "실행 중",
     "ready": "검증 완료",
