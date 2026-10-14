@@ -25,8 +25,22 @@ import { findWorkspaceReferences } from './runtime-reference-find'
 import { createReferenceAgentIndex, referenceConnectionHosts } from './runtime-reference-agents'
 import type { RuntimeReferenceFindParams } from '../../shared/runtime-reference-contracts'
 import { getRepoExecutionHostId } from '../../shared/execution-host'
+import { RuntimeMergetrainCommands } from '../mergetrain/runtime-mergetrain-commands'
+import type { MergetrainRequest } from '../../shared/mergetrain-contract'
 
 class OrcaRuntimeService extends OrcaRuntimeWithMigrationCatalog {
+  private readonly mergetrain = new RuntimeMergetrainCommands({
+    resolveRuntimeGitTarget: (selector) => this.resolveRuntimeGitTarget(selector)
+  })
+
+  getMergetrainStatus(worktreeSelector: string) {
+    return this.mergetrain.status(worktreeSelector)
+  }
+
+  startMergetrainOperation(worktreeSelector: string, request: MergetrainRequest) {
+    return this.mergetrain.start(worktreeSelector, request)
+  }
+
   private async selectReferenceCatalogWorkspace(selector: string, cwd?: string) {
     const catalog = listReferenceWorkspaces(
       this.requireStore(),

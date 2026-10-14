@@ -19925,5 +19925,27 @@
     "browser": "Browser",
     "editor": "Editor",
     "terminal": "Terminal"
+  },
+  "mergetrain": {
+    "description": "Register this branch and validate the repository queue together. Deployment remains a separate approval step.",
+    "validating": "Validating the queue on its execution host…",
+    "registering": "Registering this branch…",
+    "registerBranch": "Register branch",
+    "validateQueue": "Validate queue",
+    "refresh": "Refresh",
+    "task": "Task description",
+    "cleanBranch": "Commit all changes first. Mergetrain records the exact branch commit for this job.",
+    "addToQueue": "Add to queue",
+    "cancel": "Cancel",
+    "waiting": "Waiting",
+    "running": "Running",
+    "ready": "Ready",
+    "attention": "Attention",
+    "done": "Done",
+    "setup": "Run mergetrain init --write in this repository, configure its checks, and commit the configuration before registering work.",
+    "jobs": "Recent queue jobs",
+    "enqueued": "Registered job #{{id}}",
+    "validationResult": "Validation result: {{outcome}}",
+    "loadingQueue": "Reading the queue on its execution host…"
   }
 }
